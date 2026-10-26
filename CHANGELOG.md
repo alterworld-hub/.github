@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.0](https://github.com/alterworld-hub/.github/compare/v0.7.0...v0.8.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* promote.yml inputs image/digest -> source-sha.
+
+### Performance Improvements
+
+* release the main image instead of rebuilding the release commit ([#44](https://github.com/alterworld-hub/.github/issues/44)) ([d0d8931](https://github.com/alterworld-hub/.github/commit/d0d89316a5b0accda118ef4ae4337068d714affe)), closes [#25](https://github.com/alterworld-hub/.github/issues/25)
+
 ## [0.7.0](https://github.com/alterworld-hub/.github/compare/v0.6.0...v0.7.0) (2026-10-26)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/alterworld-hub/.github/compare/v0.8.0...v0.9.0) (2026-10-26)
+
+
+### Features
+
+* require an issue reference in PR body; document bot app permissions ([#46](https://github.com/alterworld-hub/.github/issues/46)) ([a863cdb](https://github.com/alterworld-hub/.github/commit/a863cdbf35b93aaf6ee8e401add5d35c1a97b6c9))
+
 ## [0.8.0](https://github.com/alterworld-hub/.github/compare/v0.7.0...v0.8.0) (2026-10-26)
 
 

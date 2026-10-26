@@ -21,6 +21,9 @@ on:
       cache-mode:
         type: string
         default: min
+    secrets:
+      BOT_PRIVATE_KEY:
+        required: true
 
 permissions: {}
 
@@ -55,6 +58,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    secrets:
+      BOT_PRIVATE_KEY: ${{ secrets.BOT_PRIVATE_KEY }}
 
   promote:
     needs: [image, release]

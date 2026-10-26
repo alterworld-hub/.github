@@ -47,7 +47,11 @@ jobs:
       contents: write
       pull-requests: write
       packages: write
+    secrets:
+      BOT_PRIVATE_KEY: ${{ secrets.BOT_PRIVATE_KEY }}
 ```
+
+Org secret `BOT_PRIVATE_KEY` = private key of GitHub App `alterworld-hub-bot` (contents, pull-requests: write). release-please acts as the bot so release PRs trigger CI.
 
 Required checks for `main`: `check`, `service / image / build`, `service / pr-title / check`, `service / secrets-scan / gitleaks`.
 

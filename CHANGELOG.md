@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/alterworld-hub/.github/compare/v0.6.0...v0.7.0) (2026-10-26)
+
+
+### Features
+
+* keep only issues on the org project board ([#29](https://github.com/alterworld-hub/.github/issues/29)) ([a95c975](https://github.com/alterworld-hub/.github/commit/a95c975baf8068a608ac732fbb46f7429c0945c9))
+* self-hosted renovate for all org repos ([#38](https://github.com/alterworld-hub/.github/issues/38)) ([dfd0bed](https://github.com/alterworld-hub/.github/commit/dfd0bed4feb5d979e038dd972a9444916c76976b))
+
+
+### Bug Fixes
+
+* **renovate:** use bot user id in git author ([#40](https://github.com/alterworld-hub/.github/issues/40)) ([f84d068](https://github.com/alterworld-hub/.github/commit/f84d0683eb80a259f04c459be4023f39f3bd8838)), closes [#39](https://github.com/alterworld-hub/.github/issues/39)
+
 ## [0.6.0](https://github.com/alterworld-hub/.github/compare/v0.5.1...v0.6.0) (2026-10-26)
 
 

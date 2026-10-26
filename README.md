@@ -14,11 +14,13 @@ Rules: [CONVENTIONS.md](CONVENTIONS.md).
 | `container.yml` | Build multi-arch image; push `sha-<short>`; output digest | `contents: read`, `packages: write` |
 | `release.yml` | release-please; optional major tag `vX` | `contents: write`, `pull-requests: write` |
 | `promote.yml` | Tag a built digest as `X.Y.Z`, `X.Y` (no rebuild) | `packages: write` |
+| `gitops-bump.yml` | PR in `gitops`: set `<app>` release on nodes; auto-merge | none (uses bot token) |
 
 `service.yml`:
 - PR: pr-title, secrets-scan, image build (no push).
 - `main`: secrets-scan, image push `sha-<short>`, release-please.
 - Release: promote the image of the release commit to `X.Y.Z`. Same digest as `sha-<short>`.
+- Then: bot PR in `gitops` updating `nodes/<node>/apps/<app>.version.yaml` for `deploy-nodes` (default `local`), auto-merged when checks pass.
 
 ## Service `ci.yml`
 

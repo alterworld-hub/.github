@@ -2,7 +2,8 @@ name: service
 
 # Standard pipeline for a service repo. Caller runs its own language `check` job first.
 # PR: pr-title, secrets-scan, image build (no push).
-# main: secrets-scan, image push sha-<short>, release-please; on release, promote that image to X.Y.Z.
+# main: secrets-scan, image push sha-<short>, release-please; on release, promote that image to X.Y.Z
+# and open an auto-merged gitops PR deploying it to `deploy-nodes`.
 on:
   workflow_call:
     inputs:
@@ -21,6 +22,10 @@ on:
       cache-mode:
         type: string
         default: min
+      deploy-nodes:
+        description: Nodes to deploy a new release to via gitops PR (auto-merged). Empty = none.
+        type: string
+        default: local
     secrets:
       BOT_PRIVATE_KEY:
         required: true
@@ -71,3 +76,15 @@ jobs:
       image: ${{ needs.image.outputs.image }}
       digest: ${{ needs.image.outputs.digest }}
       version: ${{ needs.release.outputs.version }}
+
+  deploy:
+    needs: [image, release, promote]
+    if: needs.release.outputs.release_created == 'true' && inputs.deploy-nodes != ''
+    uses: ./.github/workflows/gitops-bump.yml
+    with:
+      app: ${{ github.event.repository.name }}
+      version: ${{ needs.release.outputs.version }}
+      digest: ${{ needs.image.outputs.digest }}
+      nodes: ${{ inputs.deploy-nodes }}
+    secrets:
+      BOT_PRIVATE_KEY: ${{ secrets.BOT_PRIVATE_KEY }}

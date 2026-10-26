@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/alterworld-hub/.github/compare/v0.4.0...v0.4.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* retry github api calls in gitops-bump ([#11](https://github.com/alterworld-hub/.github/issues/11)) ([283784a](https://github.com/alterworld-hub/.github/commit/283784a0c8b3a7dfe452d472df4e1b2ff85c0c7b))
+
 ## [0.4.0](https://github.com/alterworld-hub/.github/compare/v0.3.0...v0.4.0) (2026-10-26)
 
 

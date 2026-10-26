@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/alterworld-hub/.github/compare/v0.5.1...v0.6.0) (2026-10-26)
+
+
+### Features
+
+* org project automation and issue forms ([#26](https://github.com/alterworld-hub/.github/issues/26)) ([b6644d2](https://github.com/alterworld-hub/.github/commit/b6644d2d2b7231062fe18234e97c389a0d403ba7))
+* project-sync handles status lifecycle ([#28](https://github.com/alterworld-hub/.github/issues/28)) ([bcce8d1](https://github.com/alterworld-hub/.github/commit/bcce8d15d7cd6537c0bf773c3fdabac34af2667d))
+
 ## [0.5.1](https://github.com/alterworld-hub/.github/compare/v0.5.0...v0.5.1) (2026-10-26)
 
 

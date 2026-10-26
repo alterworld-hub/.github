@@ -54,30 +54,40 @@ jobs:
           AUTO_MERGE: ${{ inputs.auto-merge }}
         run: |
           set -euo pipefail
+          # GitHub API intermittently returns 5xx; retry, and make every step safe to repeat.
+          retry() { local n=0; until "$@"; do n=$((n+1)); [ "$n" -ge 5 ] && return 1; echo "retry $n: $*" >&2; sleep $((n*5)); done; }
+          # Prints file metadata. Returns 1 on 404 (node does not run the app), 2 if errors persist.
+          get_file() { local n=0 out; while :; do
+            if out=$(gh api "repos/$REPO/contents/$1?ref=$branch" 2>err); then echo "$out"; return 0; fi
+            grep -q 'HTTP 404' err && return 1
+            n=$((n+1)); [ "$n" -ge 5 ] && { cat err >&2; return 2; }; sleep $((n*5)); done; }
           branch="deploy/$APP-v$VERSION"
-          base=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
-          gh api -X POST "repos/$REPO/git/refs" -f ref="refs/heads/$branch" -f sha="$base" >/dev/null
+          base=$(retry gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
+          if ! gh api "repos/$REPO/git/ref/heads/$branch" >/dev/null 2>&1; then
+            retry gh api -X POST "repos/$REPO/git/refs" -f ref="refs/heads/$branch" -f sha="$base" >/dev/null
+          fi
           changed=()
           for node in $NODES; do
             path="nodes/$node/apps/$APP.version.yaml"
-            if ! meta=$(gh api "repos/$REPO/contents/$path?ref=$branch" 2>/dev/null); then
-              echo "skip $node: no $path"; continue
-            fi
+            rc=0; meta=$(get_file "$path") || rc=$?
+            if [ "$rc" -eq 1 ]; then echo "skip $node: no $path"; continue; fi
+            if [ "$rc" -ne 0 ]; then echo "failed to read $path" >&2; exit 1; fi
             sha=$(jq -r .sha <<<"$meta")
             jq -r .content <<<"$meta" | base64 -d \
               | sed -E "s|^(\s*tag: ).*|\1v$VERSION|; s|^(\s*digest: ).*|\1$DIGEST|" > file.yaml
-            gh api -X PUT "repos/$REPO/contents/$path" \
+            retry gh api -X PUT "repos/$REPO/contents/$path" \
               -f message="feat($APP): deploy $APP v$VERSION to $node" \
               -f content="$(base64 -w0 file.yaml)" -f sha="$sha" -f branch="$branch" >/dev/null
             changed+=("$node")
           done
           if [ ${#changed[@]} -eq 0 ]; then
-            gh api -X DELETE "repos/$REPO/git/refs/heads/$branch"; echo "nothing to deploy"; exit 0
+            retry gh api -X DELETE "repos/$REPO/git/refs/heads/$branch"; echo "nothing to deploy"; exit 0
           fi
-          url=$(gh pr create -R "$REPO" --head "$branch" \
+          url=$(gh pr list -R "$REPO" --head "$branch" --json url --jq '.[0].url // empty')
+          [ -n "$url" ] || url=$(retry gh pr create -R "$REPO" --head "$branch" \
             --title "feat($APP): deploy $APP v$VERSION to ${changed[*]}" \
             --body "Release: https://github.com/alterworld-hub/$APP/releases/tag/v$VERSION
           Image: \`ghcr.io/alterworld-hub/$APP@$DIGEST\`
           Nodes: ${changed[*]}")
           echo "$url" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$AUTO_MERGE" = true ]; then gh pr merge "$url" --auto --squash; fi
+          if [ "$AUTO_MERGE" = true ]; then retry gh pr merge "$url" --auto --squash; fi

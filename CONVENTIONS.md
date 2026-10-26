@@ -41,7 +41,7 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 | Postgres db/role | snake_case | `event_gateway` |
 | RabbitMQ user/exchange/queue | kebab-case + dots | `event-gateway.events` |
 | Env var | UPPER_SNAKE, `<SERVICE>_<RESOURCE>_<KEY>` | `EVENT_GATEWAY_POSTGRESQL_PASSWORD` |
-| Node path | `/`-separated DNS labels | `corp/ukr/b1` |
+| Node path | `/`-separated DNS labels | `root/org-a/site-1` |
 
 ## GitHub Actions
 - Shared logic lives in `.github/workflows/*.yml` of this repo (`on: workflow_call`).

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/alterworld-hub/.github/compare/v0.2.0...v0.3.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* release.yml and service.yml require secret BOT_PRIVATE_KEY.
+
+### Features
+
+* open release PRs as the org bot app ([#7](https://github.com/alterworld-hub/.github/issues/7)) ([7bbbad5](https://github.com/alterworld-hub/.github/commit/7bbbad5dc04401bc2aaf2074a1dcb6106be758de))
+
 ## [0.2.0](https://github.com/alterworld-hub/.github/compare/v0.1.0...v0.2.0) (2026-10-26)
 
 

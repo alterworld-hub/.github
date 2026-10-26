@@ -1,0 +1,83 @@
+name: gitops-bump
+
+# Open a PR in alterworld-hub/gitops that sets a release of <app> on the given nodes.
+# Edits nodes/<node>/apps/<app>.version.yaml (tag + digest). Nodes without that file are skipped.
+on:
+  workflow_call:
+    inputs:
+      app:
+        type: string
+        required: true
+      version:
+        description: X.Y.Z
+        type: string
+        required: true
+      digest:
+        description: sha256:...
+        type: string
+        required: true
+      nodes:
+        description: Space-separated node paths
+        type: string
+        default: local
+      auto-merge:
+        description: Merge when checks pass
+        type: boolean
+        default: true
+    secrets:
+      BOT_PRIVATE_KEY:
+        required: true
+
+permissions: {}
+
+jobs:
+  pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: Iv23lijfDg2iyvyfLcNj # alterworld-hub-bot
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          owner: alterworld-hub
+          repositories: gitops
+
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token }}
+          REPO: alterworld-hub/gitops
+          APP: ${{ inputs.app }}
+          VERSION: ${{ inputs.version }}
+          DIGEST: ${{ inputs.digest }}
+          NODES: ${{ inputs.nodes }}
+          AUTO_MERGE: ${{ inputs.auto-merge }}
+        run: |
+          set -euo pipefail
+          branch="deploy/$APP-v$VERSION"
+          base=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
+          gh api -X POST "repos/$REPO/git/refs" -f ref="refs/heads/$branch" -f sha="$base" >/dev/null
+          changed=()
+          for node in $NODES; do
+            path="nodes/$node/apps/$APP.version.yaml"
+            if ! meta=$(gh api "repos/$REPO/contents/$path?ref=$branch" 2>/dev/null); then
+              echo "skip $node: no $path"; continue
+            fi
+            sha=$(jq -r .sha <<<"$meta")
+            jq -r .content <<<"$meta" | base64 -d \
+              | sed -E "s|^(\s*tag: ).*|\1v$VERSION|; s|^(\s*digest: ).*|\1$DIGEST|" > file.yaml
+            gh api -X PUT "repos/$REPO/contents/$path" \
+              -f message="feat($APP): deploy $APP v$VERSION to $node" \
+              -f content="$(base64 -w0 file.yaml)" -f sha="$sha" -f branch="$branch" >/dev/null
+            changed+=("$node")
+          done
+          if [ ${#changed[@]} -eq 0 ]; then
+            gh api -X DELETE "repos/$REPO/git/refs/heads/$branch"; echo "nothing to deploy"; exit 0
+          fi
+          url=$(gh pr create -R "$REPO" --head "$branch" \
+            --title "feat($APP): deploy $APP v$VERSION to ${changed[*]}" \
+            --body "Release: https://github.com/alterworld-hub/$APP/releases/tag/v$VERSION
+          Image: \`ghcr.io/alterworld-hub/$APP@$DIGEST\`
+          Nodes: ${changed[*]}")
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$AUTO_MERGE" = true ]; then gh pr merge "$url" --auto --squash; fi

@@ -1,0 +1,36 @@
+name: project-sync
+
+# Keeps org project #2 consistent: adds missing items, fills Area/Phase, moves issues with open PRs
+# to In progress, closes finished epics. Logic: scripts/project-sync.py.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        type: boolean
+        default: false
+
+concurrency:
+  group: project-sync
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: Iv23lijfDg2iyvyfLcNj # alterworld-hub-bot
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          owner: alterworld-hub
+      - run: python3 scripts/project-sync.py
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token }}
+          DRY_RUN: ${{ inputs.dry-run && '1' || '0' }}

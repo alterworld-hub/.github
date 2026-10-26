@@ -19,7 +19,7 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 - Sprints: weekly. New ideas during a sprint go to Backlog, not into the sprint. Sprint goal and outcome are kept in the project README.
 - Types: Epic (goal, sub-issues across repos) > Feature > Task; Bug. Use issue forms.
 - Fields: Status, Area, Size, Phase. Area and Phase are filled by `project-sync` (Area from repo, Phase from parent).
-- PR body: `Closes <owner>/<repo>#N`. Open PR moves the issue to In progress; merge to Done. Epic closes when all sub-issues are done.
+- PR body: `Closes <owner>/<repo>#N` (or `Refs` for partial work); enforced by `pr-title`, bots exempt. Open PR moves the issue to In progress; merge to Done. Epic closes when all sub-issues are done.
 
 ## Commits and PRs
 - [Conventional Commits 1.0](https://www.conventionalcommits.org/en/v1.0.0/).

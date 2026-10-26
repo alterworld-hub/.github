@@ -10,18 +10,21 @@ Board holds issues only; PRs are visible on their issues (Linked pull requests).
 5. Open Epic whose sub-issues are all closed -> close it.
 6. No Status -> Backlog.
 7. Closed/merged issue or PR not in Done -> Done.
+8. Open issue in a past sprint -> current sprint (carry-over).
 Rules 6-7 replace the built-in project workflows (not configurable via API).
 
-Env: GH_TOKEN, ORG, PROJECT_NUMBER, DRY_RUN=1 to only print.
+Env: GH_TOKEN, ORG, PROJECT_NUMBER, DRY_RUN=1 to only print, TODAY=YYYY-MM-DD to simulate a date.
 """
 import json
 import os
 import subprocess
 import sys
+from datetime import date, timedelta
 
 ORG = os.environ.get("ORG", "alterworld-hub")
 NUMBER = int(os.environ.get("PROJECT_NUMBER", "2"))
 DRY = os.environ.get("DRY_RUN") == "1"
+TODAY = date.fromisoformat(os.environ.get("TODAY") or date.today().isoformat())
 AREA_BY_REPO = {".github": "ci", "gitops": "gitops", "frontend": "frontend"}
 
 
@@ -43,14 +46,27 @@ def act(msg, fn, *a):
 
 
 project = gql("""query($o:String!,$n:Int!){organization(login:$o){projectV2(number:$n){id
-  fields(first:30){nodes{... on ProjectV2SingleSelectField{id name options{id name}}}}}}}""", o=ORG, n=NUMBER)["organization"]["projectV2"]
+  fields(first:30){nodes{... on ProjectV2SingleSelectField{id name options{id name}}}}
+  sprint:field(name:"Sprint"){... on ProjectV2IterationField{id configuration{iterations{id title startDate duration}}}}}}}""",
+               o=ORG, n=NUMBER)["organization"]["projectV2"]
 PID = project["id"]
 FIELDS = {f["name"]: (f["id"], {o["name"]: o["id"] for o in f["options"]}) for f in project["fields"]["nodes"] if f}
+SPRINT_ID = project["sprint"]["id"]
+
+
+def sprint_end(it):
+    return date.fromisoformat(it["startDate"]) + timedelta(days=it["duration"])
+
+
+# configuration.iterations holds current and future ones only.
+CURRENT = next((it for it in project["sprint"]["configuration"]["iterations"]
+                if date.fromisoformat(it["startDate"]) <= TODAY < sprint_end(it)), None)
 
 ITEMS_Q = """query($p:ID!,$c:String){node(id:$p){... on ProjectV2{items(first:100,after:$c){
   pageInfo{hasNextPage endCursor}
   nodes{id
-    fieldValues(first:20){nodes{... on ProjectV2ItemFieldSingleSelectValue{name field{... on ProjectV2SingleSelectField{name}}}}}
+    fieldValues(first:20){nodes{... on ProjectV2ItemFieldSingleSelectValue{name field{... on ProjectV2SingleSelectField{name}}}
+      ... on ProjectV2ItemFieldIterationValue{title startDate duration}}}
     content{__typename
       ... on Issue{id number state repository{name} issueType{name}
         parent{id} subIssuesSummary{total completed}}
@@ -75,11 +91,21 @@ def values(item):
     return {v["field"]["name"]: v["name"] for v in item["fieldValues"]["nodes"] if v and v.get("field")}
 
 
+def sprint(item):
+    return next((v for v in item["fieldValues"]["nodes"] if v and "startDate" in v), None)
+
+
 def set_field(item_id, field, option):
     fid, opts = FIELDS[field]
     gql("""mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:
       {projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}""",
         p=PID, i=item_id, f=fid, o=opts[option])
+
+
+def set_sprint(item_id, iteration_id):
+    gql("""mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:
+      {projectId:$p,itemId:$i,fieldId:$f,value:{iterationId:$o}}){projectV2Item{id}}}""",
+        p=PID, i=item_id, f=SPRINT_ID, o=iteration_id)
 
 
 def add(content_id):
@@ -146,5 +172,13 @@ for item in items:
     if (c["state"] == "OPEN" and (c.get("issueType") or {}).get("name") == "Epic"
             and s["total"] and s["completed"] == s["total"]):
         act(f"{ref}: close epic ({s['completed']}/{s['total']} done)", close, c["id"])
+
+    # 8. carry over from a past sprint
+    sp = sprint(item)
+    if c["state"] == "OPEN" and sp and sprint_end(sp) <= TODAY:
+        if CURRENT:
+            act(f"{ref}: Sprint={CURRENT['title']} (carried over from {sp['title']})", set_sprint, item["id"], CURRENT["id"])
+        else:
+            print(f"::warning::{ref}: {sp['title']} ended, no current sprint; add iterations to the Sprint field")
 
 print(f"checked {len(items)} items")

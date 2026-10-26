@@ -1,7 +1,7 @@
 name: project-sync
 
 # Keeps org project #2 consistent: adds missing items, fills Area/Phase, moves issues with open PRs
-# to In progress, closes finished epics. Logic: scripts/project-sync.py.
+# to In progress, closes finished epics, carries unfinished items over to the current sprint. Logic: scripts/project-sync.py.
 on:
   schedule:
     - cron: "*/15 * * * *"

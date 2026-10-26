@@ -1,0 +1,43 @@
+name: promote
+
+# Tag an already built image with a release version. No rebuild: same digest.
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Image without tag, e.g. ghcr.io/alterworld-hub/frontend
+        type: string
+        required: true
+      digest:
+        description: sha256:... of the built image
+        type: string
+        required: true
+      version:
+        description: X.Y.Z
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      packages: write
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Tag X.Y.Z and X.Y
+        env:
+          IMAGE: ${{ inputs.image }}
+          DIGEST: ${{ inputs.digest }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          docker buildx imagetools create \
+            -t "$IMAGE:$VERSION" -t "$IMAGE:${VERSION%.*}" "$IMAGE@$DIGEST"
+          echo "$IMAGE:$VERSION -> $DIGEST" >> "$GITHUB_STEP_SUMMARY"

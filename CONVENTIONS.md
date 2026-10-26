@@ -29,7 +29,7 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 
 ## Images
 - Registry: `ghcr.io/alterworld-hub/<repo>`.
-- Tags: `sha-<short>` from `main`, `X.Y.Z` and `X.Y` from releases. Never `latest`.
+- Tags: `sha-<short>` from `main`; `X.Y.Z`, `X.Y` added to the same digest on release. Never `latest`.
 - Deploy by digest (`@sha256:…`), never by tag.
 - Multi-arch: `linux/amd64`, `linux/arm64`.
 
@@ -49,6 +49,13 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 - First-party actions (`actions/*`, `docker/*`, `googleapis/*`): pinned by major tag.
 - Third-party actions: pinned by full commit SHA with a version comment.
 - Least-privilege `permissions:` on every workflow.
+- Every job has `timeout-minutes`. Every caller workflow has `concurrency` (cancel superseded PR runs).
+- Services use `service.yml`; only the language `check` job is per-repo.
+
+## Builds
+- Build once, promote: release tags (`X.Y.Z`) point to the digest built from `main`. Never rebuild for a release.
+- No `RUN` under QEMU. Build arch-independent artifacts on `$BUILDPLATFORM`; binaries via cross-compile or native runners.
+- Runtime images: distroless or minimal, non-root, read-only root FS.
 
 ## Secrets
 - Never in plaintext in git. Encrypted with SOPS where needed.

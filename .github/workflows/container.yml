@@ -15,10 +15,14 @@ on:
       push:
         type: boolean
         default: true
-      version:
-        description: Release version (X.Y.Z). Empty = sha tag only.
+      qemu:
+        description: Set up QEMU. Only if a non-native stage has RUN steps; prefer --platform=$BUILDPLATFORM.
+        type: boolean
+        default: false
+      cache-mode:
+        description: GHA cache export mode. min = final layers only (cheap); max = all layers (slow builds, e.g. Rust).
         type: string
-        default: ""
+        default: min
       ref:
         description: Git ref to build. Empty = triggering ref.
         type: string
@@ -34,6 +38,7 @@ permissions: {}
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
@@ -48,7 +53,8 @@ jobs:
       - id: name
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-qemu-action@v4
+      - if: inputs.qemu
+        uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
 
       - if: inputs.push
@@ -62,10 +68,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ steps.name.outputs.image }}
-          tags: |
-            type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
+          tags: type=sha,prefix=sha-,format=short
 
       - id: build
         uses: docker/build-push-action@v7
@@ -77,10 +80,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
-          provenance: mode=max
-          sbom: true
+          provenance: ${{ inputs.push && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.push }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=${{ inputs.cache-mode }}
 
       - if: inputs.push
         name: Summary

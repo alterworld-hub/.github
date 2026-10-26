@@ -1,0 +1,68 @@
+name: service
+
+# Standard pipeline for a service repo. Caller runs its own language `check` job first.
+# PR: pr-title, secrets-scan, image build (no push).
+# main: secrets-scan, image push sha-<short>, release-please; on release, promote that image to X.Y.Z.
+on:
+  workflow_call:
+    inputs:
+      context:
+        type: string
+        default: .
+      file:
+        type: string
+        default: Dockerfile
+      platforms:
+        type: string
+        default: linux/amd64,linux/arm64
+      qemu:
+        type: boolean
+        default: false
+      cache-mode:
+        type: string
+        default: min
+
+permissions: {}
+
+jobs:
+  pr-title:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-title.yml
+    permissions:
+      pull-requests: read
+
+  secrets-scan:
+    uses: ./.github/workflows/secrets-scan.yml
+    permissions:
+      contents: read
+
+  image:
+    uses: ./.github/workflows/container.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      context: ${{ inputs.context }}
+      file: ${{ inputs.file }}
+      platforms: ${{ inputs.platforms }}
+      qemu: ${{ inputs.qemu }}
+      cache-mode: ${{ inputs.cache-mode }}
+      push: ${{ github.event_name == 'push' }}
+
+  release:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+      pull-requests: write
+
+  promote:
+    needs: [image, release]
+    if: needs.release.outputs.release_created == 'true'
+    uses: ./.github/workflows/promote.yml
+    permissions:
+      packages: write
+    with:
+      image: ${{ needs.image.outputs.image }}
+      digest: ${{ needs.image.outputs.digest }}
+      version: ${{ needs.release.outputs.version }}

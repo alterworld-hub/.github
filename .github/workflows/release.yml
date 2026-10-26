@@ -7,6 +7,9 @@ on:
         description: Move tag vX to the new release
         type: boolean
         default: false
+    secrets:
+      BOT_PRIVATE_KEY:
+        required: true
     outputs:
       release_created:
         value: ${{ jobs.release-please.outputs.release_created }}
@@ -32,9 +35,17 @@ jobs:
       version: ${{ steps.rp.outputs.version }}
       sha: ${{ steps.rp.outputs.sha }}
     steps:
+      # PRs opened with GITHUB_TOKEN do not trigger CI; the org bot app's token does.
+      - id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: Iv23lijfDg2iyvyfLcNj # alterworld-hub-bot
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
       - id: rp
         uses: googleapis/release-please-action@v5
         with:
+          token: ${{ steps.bot.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 

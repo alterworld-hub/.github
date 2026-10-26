@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/alterworld-hub/.github/compare/v0.3.0...v0.4.0) (2026-10-26)
+
+
+### Features
+
+* deploy releases to nodes via bot PR in gitops ([#9](https://github.com/alterworld-hub/.github/issues/9)) ([ac1e0c5](https://github.com/alterworld-hub/.github/commit/ac1e0c54c99d42b57e8c482eb0bcd17cb3230711))
+
 ## [0.3.0](https://github.com/alterworld-hub/.github/compare/v0.2.0...v0.3.0) (2026-10-26)
 
 

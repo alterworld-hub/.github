@@ -15,6 +15,8 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 
 ## Planning
 - One org project: [alterworld](https://github.com/orgs/alterworld-hub/projects/2). Work = issues in the repo they belong to.
+- No work without an issue. Before starting: find or create it (type, parent epic), put it into the current Sprint, set In progress.
+- Sprints: weekly. New ideas during a sprint go to Backlog, not into the sprint. Sprint goal and outcome are kept in the project README.
 - Types: Epic (goal, sub-issues across repos) > Feature > Task; Bug. Use issue forms.
 - Fields: Status, Area, Size, Phase. Area and Phase are filled by `project-sync` (Area from repo, Phase from parent).
 - PR body: `Closes <owner>/<repo>#N`. Open PR moves the issue to In progress; merge to Done. Epic closes when all sub-issues are done.

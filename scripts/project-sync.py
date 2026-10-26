@@ -6,6 +6,9 @@
 3. Phase empty -> inherit from parent issue.
 4. Open issue in Backlog/Next with an open PR closing it -> In progress.
 5. Open Epic whose sub-issues are all closed -> close it.
+6. No Status -> Backlog.
+7. Closed/merged issue or PR not in Done -> Done.
+Rules 6-7 replace the built-in project workflows (not configurable via API).
 
 Env: GH_TOKEN, ORG, PROJECT_NUMBER, DRY_RUN=1 to only print.
 """
@@ -111,6 +114,15 @@ for item in items:
         area = AREA_BY_REPO.get(repo, repo)
         if area in FIELDS["Area"][1]:
             act(f"{ref}: Area={area}", set_field, item["id"], "Area", area)
+
+    # 6-7. Status lifecycle
+    if c["state"] in ("CLOSED", "MERGED"):
+        if v.get("Status") != "Done":
+            act(f"{ref}: Status=Done ({c['state'].lower()})", set_field, item["id"], "Status", "Done")
+        continue
+    if "Status" not in v:
+        act(f"{ref}: Status=Backlog", set_field, item["id"], "Status", "Backlog")
+        v["Status"] = "Backlog"
 
     if c["__typename"] != "Issue":
         continue

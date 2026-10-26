@@ -1,17 +1,14 @@
 name: promote
 
 # Release = one immutable artifact per service:
-# - image: tag the main-built digest as X.Y.Z, X.Y (no rebuild)
+# - image: the image built from the last main commit before the release commit (the release commit
+#   only bumps versions, so it is not rebuilt), tagged X.Y.Z, X.Y
 # - chart: package the chart at the release commit with that digest baked in, push as OCI X.Y.Z
 on:
   workflow_call:
     inputs:
-      image:
-        description: Image without tag, e.g. ghcr.io/alterworld-hub/frontend
-        type: string
-        required: true
-      digest:
-        description: sha256:... of the built image
+      source-sha:
+        description: Commit whose main image (sha-<short>) is released, i.e. the parent of the release commit
         type: string
         required: true
       version:
@@ -27,6 +24,8 @@ on:
         type: string
         default: deploy/chart
     outputs:
+      digest:
+        value: ${{ jobs.tag.outputs.digest }}
       chart:
         value: ${{ jobs.tag.outputs.chart }}
 
@@ -35,11 +34,12 @@ permissions: {}
 jobs:
   tag:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
     outputs:
+      digest: ${{ steps.src.outputs.digest }}
       chart: ${{ steps.chart.outputs.chart }}
     steps:
       - uses: docker/login-action@v4
@@ -48,10 +48,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      # The source image may still be building if the release was merged right after it.
+      - id: src
+        name: Resolve source image digest (wait up to 10 min)
+        env:
+          SRC: ${{ inputs.source-sha }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"; tag="sha-${SRC:0:7}"
+          for _ in $(seq 60); do
+            if digest=$(docker buildx imagetools inspect "$image:$tag" --format '{{json .Manifest}}' 2>/dev/null | jq -er .digest); then
+              echo "image=$image" >> "$GITHUB_OUTPUT"; echo "digest=$digest" >> "$GITHUB_OUTPUT"
+              echo "source $image:$tag -> $digest" >> "$GITHUB_STEP_SUMMARY"; exit 0
+            fi
+            echo "waiting for $image:$tag"; sleep 10
+          done
+          echo "::error::$image:$tag not found; was main built for $SRC?"; exit 1
+
       - name: Tag image X.Y.Z and X.Y
         env:
-          IMAGE: ${{ inputs.image }}
-          DIGEST: ${{ inputs.digest }}
+          IMAGE: ${{ steps.src.outputs.image }}
+          DIGEST: ${{ steps.src.outputs.digest }}
           VERSION: ${{ inputs.version }}
         run: |
           docker buildx imagetools create \
@@ -68,7 +85,7 @@ jobs:
         name: Package chart with pinned image, push OCI
         env:
           CHART: ${{ inputs.chart-path }}
-          DIGEST: ${{ inputs.digest }}
+          DIGEST: ${{ steps.src.outputs.digest }}
           VERSION: ${{ inputs.version }}
           TOKEN: ${{ github.token }}
         run: |

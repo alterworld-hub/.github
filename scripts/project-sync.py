@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Keep the org project consistent. Idempotent; safe to run any time.
 
-1. Add open issues/PRs of the org that are not in the project.
+Board holds issues only; PRs are visible on their issues (Linked pull requests).
+
+1. Add open issues of the org that are not in the project.
 2. Area empty -> set from repository (AREA_BY_REPO, else option named like the repo).
 3. Phase empty -> inherit from parent issue.
 4. Open issue in Backlog/Next with an open PR closing it -> In progress.
@@ -90,16 +92,17 @@ def close(issue_id):
 
 # 1. missing open issues/PRs
 missing = gql("""query($q:String!){search(query:$q,type:ISSUE,first:100){nodes{
-  ... on Issue{id number repository{name}} ... on PullRequest{id number repository{name}}}}}""",
-              q=f"org:{ORG} is:open -project:{ORG}/{NUMBER}")["search"]["nodes"]
+  ... on Issue{id number repository{name}}}}}""",
+              q=f"org:{ORG} is:issue is:open -project:{ORG}/{NUMBER}")["search"]["nodes"]
 for c in missing:
     if c:
         act(f"add {c['repository']['name']}#{c['number']}", add, c["id"])
 
 items = load_items()
 by_content = {i["content"]["id"]: i for i in items if i.get("content") and "id" in i["content"]}
-closing = {iss["id"] for i in items if i.get("content") and i["content"]["__typename"] == "PullRequest"
-           and i["content"]["state"] == "OPEN" for iss in i["content"]["closingIssuesReferences"]["nodes"]}
+prs = gql("""query($q:String!){search(query:$q,type:ISSUE,first:100){nodes{
+  ... on PullRequest{closingIssuesReferences(first:10){nodes{id}}}}}}""", q=f"org:{ORG} is:pr is:open")["search"]["nodes"]
+closing = {iss["id"] for pr in prs if pr for iss in pr["closingIssuesReferences"]["nodes"]}
 
 for item in items:
     c = item.get("content")

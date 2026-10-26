@@ -48,7 +48,9 @@ jobs:
     permissions:
       contents: read
 
+  # Release commits only bump versions; their release reuses the parent's main image (promote).
   image:
+    if: "github.event_name == 'pull_request' || !startsWith(github.event.head_commit.message, 'chore(main): release ')"
     uses: ./.github/workflows/container.yml
     permissions:
       contents: read
@@ -71,27 +73,26 @@ jobs:
       BOT_PRIVATE_KEY: ${{ secrets.BOT_PRIVATE_KEY }}
 
   promote:
-    needs: [image, release]
+    needs: [release]
     if: needs.release.outputs.release_created == 'true'
     uses: ./.github/workflows/promote.yml
     permissions:
       contents: read
       packages: write
     with:
-      image: ${{ needs.image.outputs.image }}
-      digest: ${{ needs.image.outputs.digest }}
+      source-sha: ${{ github.event.before }}
       version: ${{ needs.release.outputs.version }}
       ref: ${{ needs.release.outputs.sha }}
       chart-path: ${{ inputs.chart-path }}
 
   deploy:
-    needs: [image, release, promote]
+    needs: [release, promote]
     if: needs.release.outputs.release_created == 'true' && inputs.deploy-nodes != ''
     uses: ./.github/workflows/gitops-bump.yml
     with:
       app: ${{ github.event.repository.name }}
       version: ${{ needs.release.outputs.version }}
-      digest: ${{ needs.image.outputs.digest }}
+      digest: ${{ needs.promote.outputs.digest }}
       nodes: ${{ inputs.deploy-nodes }}
     secrets:
       BOT_PRIVATE_KEY: ${{ secrets.BOT_PRIVATE_KEY }}

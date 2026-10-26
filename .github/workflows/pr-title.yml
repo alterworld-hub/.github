@@ -1,5 +1,6 @@
 name: pr-title
 
+# PR title is a Conventional Commit; PR body references an issue (bots exempt).
 on:
   workflow_call:
 
@@ -27,3 +28,17 @@ jobs:
             ci
             chore
             revert
+      # Body is fetched, not taken from the event: after editing the body, re-run this job.
+      - name: issue reference
+        if: github.event.pull_request.user.type != 'Bot'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          body=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '.body // ""')
+          if grep -qiE '\b(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?)\b:?[[:space:]]+([[:alnum:]_.-]+/[[:alnum:]_.-]+)?#[0-9]+' <<<"$body"; then
+            echo "issue reference found"
+          else
+            echo "::error::PR body must reference an issue: 'Closes #N', 'Closes <owner>/<repo>#N' or 'Refs #N'"
+            exit 1
+          fi

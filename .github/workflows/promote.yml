@@ -1,6 +1,8 @@
 name: promote
 
-# Tag an already built image with a release version. No rebuild: same digest.
+# Release = one immutable artifact per service:
+# - image: tag the main-built digest as X.Y.Z, X.Y (no rebuild)
+# - chart: package the chart at the release commit with that digest baked in, push as OCI X.Y.Z
 on:
   workflow_call:
     inputs:
@@ -16,6 +18,17 @@ on:
         description: X.Y.Z
         type: string
         required: true
+      ref:
+        description: Release commit (chart source)
+        type: string
+        required: true
+      chart-path:
+        description: Helm chart dir. Empty = no chart.
+        type: string
+        default: deploy/chart
+    outputs:
+      chart:
+        value: ${{ jobs.tag.outputs.chart }}
 
 permissions: {}
 
@@ -24,7 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      contents: read
       packages: write
+    outputs:
+      chart: ${{ steps.chart.outputs.chart }}
     steps:
       - uses: docker/login-action@v4
         with:
@@ -32,7 +48,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Tag X.Y.Z and X.Y
+      - name: Tag image X.Y.Z and X.Y
         env:
           IMAGE: ${{ inputs.image }}
           DIGEST: ${{ inputs.digest }}
@@ -40,4 +56,28 @@ jobs:
         run: |
           docker buildx imagetools create \
             -t "$IMAGE:$VERSION" -t "$IMAGE:${VERSION%.*}" "$IMAGE@$DIGEST"
-          echo "$IMAGE:$VERSION -> $DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo "image $IMAGE:$VERSION -> $DIGEST" >> "$GITHUB_STEP_SUMMARY"
+
+      - if: inputs.chart-path != ''
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - if: inputs.chart-path != ''
+        id: chart
+        name: Package chart with pinned image, push OCI
+        env:
+          CHART: ${{ inputs.chart-path }}
+          DIGEST: ${{ inputs.digest }}
+          VERSION: ${{ inputs.version }}
+          TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          yq -i '.image.digest = strenv(DIGEST) | .image.tag = ""' "$CHART/values.yaml"
+          helm package "$CHART" --version "$VERSION" --app-version "$VERSION" -d dist
+          registry="oci://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/charts"
+          echo "$TOKEN" | helm registry login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          helm push dist/*.tgz "$registry"
+          name=$(yq .name "$CHART/Chart.yaml")
+          echo "chart=$registry/$name:$VERSION" >> "$GITHUB_OUTPUT"
+          echo "chart $registry/$name:$VERSION (image $DIGEST)" >> "$GITHUB_STEP_SUMMARY"

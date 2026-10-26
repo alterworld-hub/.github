@@ -66,6 +66,9 @@ jobs:
 
       - id: meta
         uses: docker/metadata-action@v6
+        env:
+          # Multi-arch: registries (GHCR package page) read description/source from the index.
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
           images: ${{ steps.name.outputs.image }}
           tags: type=sha,prefix=sha-,format=short

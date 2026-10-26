@@ -28,7 +28,7 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 - Repos consumed by ref (`.github`) also move a major tag `vX`.
 
 ## Images
-- Registry: `ghcr.io/alterworld-hub/<repo>`.
+- Registry: `ghcr.io/alterworld-hub/<repo>`. Packages are public (nodes pull without credentials) while code is public. Revisit before any image must be private: [gitops#4](https://github.com/alterworld-hub/gitops/issues/4).
 - Tags: `sha-<short>` from `main`; `X.Y.Z`, `X.Y` added to the same digest on release. Never `latest`.
 - Deploy by digest (`@sha256:…`), never by tag.
 - Multi-arch: `linux/amd64`, `linux/arm64`.

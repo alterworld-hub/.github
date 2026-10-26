@@ -1,0 +1,51 @@
+name: release
+
+on:
+  workflow_call:
+    inputs:
+      float-major-tag:
+        description: Move tag vX to the new release
+        type: boolean
+        default: false
+    outputs:
+      release_created:
+        value: ${{ jobs.release-please.outputs.release_created }}
+      tag_name:
+        value: ${{ jobs.release-please.outputs.tag_name }}
+      version:
+        value: ${{ jobs.release-please.outputs.version }}
+      sha:
+        value: ${{ jobs.release-please.outputs.sha }}
+
+permissions: {}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+      version: ${{ steps.rp.outputs.version }}
+      sha: ${{ steps.rp.outputs.sha }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - if: inputs.float-major-tag && steps.rp.outputs.release_created == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.rp.outputs.sha }}
+
+      - if: inputs.float-major-tag && steps.rp.outputs.release_created == 'true'
+        name: Move major tag
+        env:
+          MAJOR: v${{ steps.rp.outputs.major }}
+        run: |
+          git tag -f "$MAJOR"
+          git push -f origin "refs/tags/$MAJOR"

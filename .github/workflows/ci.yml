@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  pr-title:
+    uses: ./.github/workflows/pr-title.yml
+    permissions:
+      pull-requests: read
+
+  secrets-scan:
+    uses: ./.github/workflows/secrets-scan.yml
+    permissions:
+      contents: read
+
+  actionlint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo:ro" --workdir /repo docker.io/rhysd/actionlint:1.7.12 -color

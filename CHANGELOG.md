@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/alterworld-hub/.github/compare/v0.5.0...v0.5.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* annotate multi-arch image index ([#16](https://github.com/alterworld-hub/.github/issues/16)) ([7ea9829](https://github.com/alterworld-hub/.github/commit/7ea9829bc5e69b34bc9911f01f9344140b2c52aa))
+
 ## [0.5.0](https://github.com/alterworld-hub/.github/compare/v0.4.1...v0.5.0) (2026-10-26)
 
 

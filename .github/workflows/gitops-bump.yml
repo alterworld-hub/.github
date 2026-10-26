@@ -1,7 +1,8 @@
 name: gitops-bump
 
 # Open a PR in alterworld-hub/gitops that sets a release of <app> on the given nodes.
-# Edits nodes/<node>/apps/<app>.version.yaml (tag + digest). Nodes without that file are skipped.
+# Edits nodes/<node>/apps/<app>.version.yaml. Nodes without that file are skipped.
+# OCIRepository file: chart tag X.Y.Z (chart pins the image). Legacy GitRepository file: tag vX.Y.Z + image digest.
 on:
   workflow_call:
     inputs:
@@ -73,8 +74,12 @@ jobs:
             if [ "$rc" -eq 1 ]; then echo "skip $node: no $path"; continue; fi
             if [ "$rc" -ne 0 ]; then echo "failed to read $path" >&2; exit 1; fi
             sha=$(jq -r .sha <<<"$meta")
-            jq -r .content <<<"$meta" | base64 -d \
-              | sed -E "s|^(\s*tag: ).*|\1v$VERSION|; s|^(\s*digest: ).*|\1$DIGEST|" > file.yaml
+            jq -r .content <<<"$meta" | base64 -d > orig.yaml
+            if grep -q 'kind: OCIRepository' orig.yaml; then
+              sed -E "s|^(\s*tag: ).*|\1$VERSION|" orig.yaml > file.yaml
+            else
+              sed -E "s|^(\s*tag: ).*|\1v$VERSION|; s|^(\s*digest: ).*|\1$DIGEST|" orig.yaml > file.yaml
+            fi
             retry gh api -X PUT "repos/$REPO/contents/$path" \
               -f message="feat($APP): deploy $APP v$VERSION to $node" \
               -f content="$(base64 -w0 file.yaml)" -f sha="$sha" -f branch="$branch" >/dev/null

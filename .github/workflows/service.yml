@@ -22,6 +22,10 @@ on:
       cache-mode:
         type: string
         default: min
+      chart-path:
+        description: Helm chart dir published on release. Empty = none.
+        type: string
+        default: deploy/chart
       deploy-nodes:
         description: Nodes to deploy a new release to via gitops PR (auto-merged). Empty = none.
         type: string
@@ -71,11 +75,14 @@ jobs:
     if: needs.release.outputs.release_created == 'true'
     uses: ./.github/workflows/promote.yml
     permissions:
+      contents: read
       packages: write
     with:
       image: ${{ needs.image.outputs.image }}
       digest: ${{ needs.image.outputs.digest }}
       version: ${{ needs.release.outputs.version }}
+      ref: ${{ needs.release.outputs.sha }}
+      chart-path: ${{ inputs.chart-path }}
 
   deploy:
     needs: [image, release, promote]

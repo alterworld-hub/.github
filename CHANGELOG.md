@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/alterworld-hub/.github/compare/v0.9.0...v0.10.0) (2026-10-26)
+
+
+### Features
+
+* **project-sync:** carry unfinished items over to the current sprint ([#48](https://github.com/alterworld-hub/.github/issues/48)) ([32917e4](https://github.com/alterworld-hub/.github/commit/32917e4cb9e3aa9fece5b56b00130efd75d8b0b8))
+
 ## [0.9.0](https://github.com/alterworld-hub/.github/compare/v0.8.0...v0.9.0) (2026-10-26)
 
 

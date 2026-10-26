@@ -24,6 +24,7 @@ Rules: [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Org automation (runs in this repo)
 - `project-sync.yml`: every 15 min, keeps [project #2](https://github.com/orgs/alterworld-hub/projects/2) consistent (`scripts/project-sync.py`). Manual run with `dry-run` prints actions only.
+- `renovate.yml`: daily, self-hosted Renovate as the bot for all org repos (`renovate/config.json`): third-party charts (via `# renovate:` hints in gitops), base images, npm, actions, tool images. Own artifacts excluded (gitops-bump). Manual run with `dry-run`.
 - Issue forms (`.github/ISSUE_TEMPLATE`): default for every org repo without its own; set issue type and add to the project.
 
 ## Service `ci.yml`

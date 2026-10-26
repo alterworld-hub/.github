@@ -1,0 +1,102 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "platform": "github",
+  "autodiscover": true,
+  "autodiscoverFilter": [
+    "alterworld-hub/*"
+  ],
+  "onboarding": false,
+  "requireConfig": "optional",
+  "platformCommit": "enabled",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":disableDependencyDashboard"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 10,
+  "customManagers": [
+    {
+      "description": "Version files in gitops: '# renovate: datasource=... depName=... [registryUrl=...]' above 'tag:'",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)nodes/.+\\.version\\.yaml$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?\\s*\\n\\s*tag:\\s*(?<currentValue>\\S+)"
+      ]
+    },
+    {
+      "description": "Pinned tool images in workflows and justfiles",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/.+\\.ya?ml$/",
+        "/(^|/)justfile$/"
+      ],
+      "matchStrings": [
+        "(?<depName>(?:ghcr\\.io|docker\\.io)/[a-z0-9._/-]+):(?<currentValue>v?\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Own artifacts are deployed by gitops-bump, not Renovate",
+      "matchPackageNames": [
+        "ghcr.io/alterworld-hub/**"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Registries without release dates: do not block on minimumReleaseAge",
+      "matchDatasources": [
+        "docker"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Runtime changes release a patch version of the service",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "semanticCommitType": "fix"
+    },
+    {
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "semanticCommitType": "fix"
+    },
+    {
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "npm non-major",
+      "schedule": [
+        "before 9am on monday"
+      ]
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions",
+      "schedule": [
+        "before 9am on monday"
+      ]
+    }
+  ],
+  "gitAuthor": "alterworld-hub-bot[bot] <5483944+alterworld-hub-bot[bot]@users.noreply.github.com>"
+}

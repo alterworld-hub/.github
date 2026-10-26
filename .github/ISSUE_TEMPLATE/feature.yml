@@ -1,0 +1,23 @@
+name: Feature
+description: New capability (may have sub-issues)
+type: Feature
+projects: ["alterworld-hub/2"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+    validations:
+      required: true

@@ -1,0 +1,16 @@
+name: Epic
+description: Large goal; work is tracked as sub-issues across repos
+type: Epic
+projects: ["alterworld-hub/2"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: In / out of scope

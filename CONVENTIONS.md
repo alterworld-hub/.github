@@ -13,6 +13,12 @@ Org-wide rules for `alterworld-hub`. Terse by design: read by humans and agents.
 | `gitops` | Desired state of every node |
 | `<service>` | Code, `Dockerfile`, Helm chart, CI caller |
 
+## Planning
+- One org project: [alterworld](https://github.com/orgs/alterworld-hub/projects/2). Work = issues in the repo they belong to.
+- Types: Epic (goal, sub-issues across repos) > Feature > Task; Bug. Use issue forms.
+- Fields: Status, Area, Size, Phase. Area and Phase are filled by `project-sync` (Area from repo, Phase from parent).
+- PR body: `Closes <owner>/<repo>#N`. Open PR moves the issue to In progress; merge to Done. Epic closes when all sub-issues are done.
+
 ## Commits and PRs
 - [Conventional Commits 1.0](https://www.conventionalcommits.org/en/v1.0.0/).
 - Types: `feat` `fix` `perf` `refactor` `docs` `test` `build` `ci` `chore` `revert`.

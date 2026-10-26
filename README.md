@@ -22,6 +22,10 @@ Rules: [CONVENTIONS.md](CONVENTIONS.md).
 - Release: promote the image of the release commit to `X.Y.Z`. Same digest as `sha-<short>`.
 - Then: bot PR in `gitops` setting the chart version in `nodes/<node>/apps/<app>.version.yaml` for `deploy-nodes` (default `local`), auto-merged when checks pass. One value per node = atomic rollout (chart pins the image).
 
+## Org automation (runs in this repo)
+- `project-sync.yml`: every 15 min, keeps [project #2](https://github.com/orgs/alterworld-hub/projects/2) consistent (`scripts/project-sync.py`). Manual run with `dry-run` prints actions only.
+- Issue forms (`.github/ISSUE_TEMPLATE`): default for every org repo without its own; set issue type and add to the project.
+
 ## Service `ci.yml`
 
 ```yaml

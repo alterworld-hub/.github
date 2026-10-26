@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/alterworld-hub/.github/compare/v0.4.1...v0.5.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* promote.yml requires input `ref`.
+
+### Features
+
+* publish release chart with pinned image digest ([#13](https://github.com/alterworld-hub/.github/issues/13)) ([9c7c20a](https://github.com/alterworld-hub/.github/commit/9c7c20ac7f00b58596a6d51f7f2a941f6aea4e07))
+
 ## [0.4.1](https://github.com/alterworld-hub/.github/compare/v0.4.0...v0.4.1) (2026-10-26)
 
 
